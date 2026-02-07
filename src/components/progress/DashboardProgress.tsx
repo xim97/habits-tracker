@@ -8,7 +8,12 @@ import { formatDateKey, getWeekDates, getMonthDates, getHabitsForDate } from '@/
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
-export function DashboardProgress() {
+interface DashboardProgressProps {
+  selectedDate?: Date;
+  onDateSelect?: (date: Date) => void;
+}
+
+export function DashboardProgress({ selectedDate, onDateSelect }: DashboardProgressProps) {
   const [view, setView] = useLocalStorage<ViewType>('habits-tracker:progress-view', 'weekly');
   const { habits, completions } = useHabitsContext();
 
@@ -26,6 +31,10 @@ export function DashboardProgress() {
     return completedCount / habitsForDay.length;
   };
 
+  const handleDateClick = (date: Date) => {
+    onDateSelect?.(date);
+  };
+
   const weekDates = useMemo(() => getWeekDates(today), []);
   const monthDates = useMemo(() => getMonthDates(today), []);
   const last7Days = useMemo(() =>
@@ -39,6 +48,8 @@ export function DashboardProgress() {
     if (completion > 0) return 'bg-amber-300';
     return 'bg-red-300';
   };
+
+  const isSelected = (date: Date) => selectedDate && isSameDay(date, selectedDate);
 
   return (
     <div className="space-y-3">
@@ -73,23 +84,34 @@ export function DashboardProgress() {
               const isToday = isSameDay(date, today);
               const percentage = completion !== null ? Math.round(completion * 100) : 0;
               const height = completion !== null ? Math.max(20, percentage) : 20;
+              const selected = isSelected(date);
 
               return (
-                <div key={date.toISOString()} className="flex-1 flex flex-col items-center gap-1">
+                <button
+                  key={date.toISOString()}
+                  onClick={() => handleDateClick(date)}
+                  className={`flex-1 flex flex-col items-center gap-1 group ${
+                    selected ? 'scale-105' : ''
+                  }`}
+                >
                   <div className="w-full h-24 flex items-end justify-center">
                     <div
-                      className={`w-full max-w-[32px] rounded-t-md transition-all duration-500 ease-out ${getCompletionColor(completion)}`}
+                      className={`w-full max-w-[32px] rounded-t-md transition-all duration-500 ease-out group-hover:opacity-80 ${getCompletionColor(completion)} ${
+                        selected ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900' : ''
+                      }`}
                       style={{ height: `${height}%` }}
                     />
                   </div>
                   <span className={`text-xs ${
-                    isToday
+                    selected
+                      ? 'font-semibold text-blue-600 dark:text-blue-400'
+                      : isToday
                       ? 'font-semibold text-emerald-600 dark:text-emerald-400'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}>
                     {format(date, 'EEE')}
                   </span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -103,24 +125,37 @@ export function DashboardProgress() {
             {weekDates.map((date) => {
               const completion = getDayCompletion(date);
               const isToday = isSameDay(date, today);
+              const selected = isSelected(date);
 
               return (
-                <div key={date.toISOString()} className="text-center">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <button
+                  key={date.toISOString()}
+                  onClick={() => handleDateClick(date)}
+                  className="text-center group"
+                >
+                  <div className={`text-xs mb-1 ${
+                    selected
+                      ? 'text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}>
                     {format(date, 'EEE')}
                   </div>
                   <div
-                    className={`aspect-square rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                    className={`aspect-square rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-300 group-hover:scale-105 ${
                       getCompletionColor(completion)
                     } ${
                       completion !== null && completion > 0 ? 'text-white' : 'text-gray-500 dark:text-gray-400'
                     } ${
-                      isToday ? 'ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-gray-900' : ''
+                      selected
+                        ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900'
+                        : isToday
+                        ? 'ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-gray-900'
+                        : ''
                     }`}
                   >
                     {date.getDate()}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -146,20 +181,26 @@ export function DashboardProgress() {
             {monthDates.map((date) => {
               const completion = getDayCompletion(date);
               const isToday = isSameDay(date, today);
+              const selected = isSelected(date);
 
               return (
-                <div
+                <button
                   key={date.toISOString()}
-                  className={`aspect-square rounded flex items-center justify-center text-[10px] transition-all duration-300 ${
+                  onClick={() => handleDateClick(date)}
+                  className={`aspect-square rounded flex items-center justify-center text-[10px] transition-all duration-300 hover:scale-110 ${
                     getCompletionColor(completion)
                   } ${
                     completion !== null && completion > 0 ? 'text-white' : 'text-gray-500 dark:text-gray-400'
                   } ${
-                    isToday ? 'ring-1 ring-emerald-500' : ''
+                    selected
+                      ? 'ring-2 ring-blue-500'
+                      : isToday
+                      ? 'ring-1 ring-emerald-500'
+                      : ''
                   }`}
                 >
                   {date.getDate()}
-                </div>
+                </button>
               );
             })}
           </div>

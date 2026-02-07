@@ -41,7 +41,7 @@ export default function Dashboard() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left: Progress Dashboard & Analytics */}
       <div className="space-y-6">
-        <DashboardProgress />
+        <DashboardProgress selectedDate={selectedDate} onDateSelect={setSelectedDate} />
         <AnalyticsStats />
       </div>
 
